@@ -1,26 +1,315 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+   devPilot — "the listing"
+   ----------------------------------------------------------------------------
+   One metaphor governs the whole product: a printed source listing. Content
+   sits in a right-hand column; a monospace gutter on the left carries
+   provenance and metadata; a hairline rule separates them. Structure comes
+   from rules, not from cards or shadows.
+
+   Six named tokens. Each owns one job.
+
+     paper   page substrate
+     ink     every glyph of text
+     rule    every divider, gutter line, field edge  <- the workhorse
+     live    "this corpus is queryable" — READY, primary action, focus, caret
+     work    "indexing is happening" — the only warm hue in the system
+     fault   "this broke" — FAILED status, errorMessage, destructive actions
+
+   Honest accounting: the READY steady state — which is most of the pixels a
+   user ever sees — is paper / ink / rule / live. `work` and `fault` are
+   state-conditional and genuinely rare. That rarity is the point: when
+   something warm appears on screen, work is being done, no legend required.
+
+   The shadcn/Base UI token contract below is aliased onto these six, so every
+   primitive inherits the system instead of re-declaring it.
+   ============================================================================ */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- the six --- */
+  --paper: oklch(0.985 0.003 145);
+  --ink: oklch(0.21 0.012 175);
+  --rule: oklch(0.885 0.007 175);
+  --live: oklch(0.47 0.115 198);
+  --work: oklch(0.62 0.145 62);
+  --fault: oklch(0.52 0.19 25);
+
+  /* --- steps derived from the six (no new hues introduced) --- */
+  --paper-raised: oklch(1 0 0);
+  --paper-sunken: oklch(0.962 0.004 160);
+  --paper-field: oklch(0.947 0.005 160);
+  --ink-soft: oklch(0.475 0.014 178);
+  --ink-faint: oklch(0.615 0.012 178);
+  --rule-strong: oklch(0.8 0.01 178);
+  --live-fg: oklch(0.99 0.004 198);
+  --live-tint: oklch(0.955 0.026 198);
+  --work-fg: oklch(0.99 0.004 62);
+  --work-tint: oklch(0.965 0.03 68);
+  --fault-fg: oklch(0.99 0.004 25);
+  --fault-tint: oklch(0.962 0.02 25);
+
+  --radius: 0.375rem;
+
+  /* --- shadcn / Base UI contract --- */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--paper-raised);
+  --card-foreground: var(--ink);
+  --popover: var(--paper-raised);
+  --popover-foreground: var(--ink);
+  --primary: var(--live);
+  --primary-foreground: var(--live-fg);
+  --secondary: var(--paper-sunken);
+  --secondary-foreground: var(--ink);
+  --muted: var(--paper-sunken);
+  --muted-foreground: var(--ink-soft);
+  --accent: var(--paper-field);
+  --accent-foreground: var(--ink);
+  --destructive: var(--fault);
+  --success: var(--live);
+  --border: var(--rule);
+  --input: var(--rule-strong);
+  --ring: var(--live);
+
+  --chart-1: var(--live);
+  --chart-2: oklch(0.6 0.09 198);
+  --chart-3: var(--work);
+  --chart-4: oklch(0.72 0.03 178);
+  --chart-5: oklch(0.4 0.02 178);
+
+  /* The nav rail is the desk the listing sits on: one step sunken. */
+  --sidebar: oklch(0.955 0.005 160);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--live);
+  --sidebar-primary-foreground: var(--live-fg);
+  --sidebar-accent: oklch(0.925 0.008 165);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: oklch(0.87 0.008 170);
+  --sidebar-ring: var(--live);
+}
+
+/* Dark is a blueprint inversion, not a grey inversion: the paper keeps its
+   cool green-blue cast so `live` still reads as the same material. */
+.dark {
+  --paper: oklch(0.185 0.013 192);
+  --ink: oklch(0.95 0.005 175);
+  --rule: oklch(0.335 0.014 186);
+  --live: oklch(0.76 0.125 198);
+  --work: oklch(0.78 0.145 68);
+  --fault: oklch(0.68 0.185 25);
+
+  --paper-raised: oklch(0.228 0.014 192);
+  --paper-sunken: oklch(0.262 0.014 190);
+  --paper-field: oklch(0.288 0.015 190);
+  --ink-soft: oklch(0.7 0.014 180);
+  --ink-faint: oklch(0.575 0.013 182);
+  --rule-strong: oklch(0.42 0.016 186);
+  --live-fg: oklch(0.17 0.03 198);
+  --live-tint: oklch(0.3 0.045 198);
+  --work-fg: oklch(0.18 0.03 62);
+  --work-tint: oklch(0.31 0.05 62);
+  --fault-fg: oklch(0.16 0.03 25);
+  --fault-tint: oklch(0.3 0.055 25);
+
+  --chart-2: oklch(0.58 0.09 198);
+  --chart-4: oklch(0.5 0.03 178);
+  --chart-5: oklch(0.75 0.02 178);
+
+  --sidebar: oklch(0.155 0.012 192);
+  --sidebar-foreground: var(--ink);
+  --sidebar-accent: oklch(0.245 0.015 190);
+  --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: oklch(0.29 0.014 188);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* the six, addressable directly */
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunken: var(--paper-sunken);
+  --color-paper-field: var(--paper-field);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-live: var(--live);
+  --color-live-fg: var(--live-fg);
+  --color-live-tint: var(--live-tint);
+  --color-work: var(--work);
+  --color-work-fg: var(--work-fg);
+  --color-work-tint: var(--work-tint);
+  --color-fault: var(--fault);
+  --color-fault-fg: var(--fault-fg);
+  --color-fault-tint: var(--fault-tint);
+
+  /* Three roles, two families. Mono is promoted to display: headings that
+     look like identifiers, because the repo is the object being queried. */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-geist-mono);
+  --font-heading: var(--font-geist-mono);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    letter-spacing: -0.02em;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  /* Keyboard focus must never be invisible, whatever a primitive does. */
+  :focus-visible {
+    outline: 2px solid var(--live);
+    outline-offset: 2px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  /* Micro-label: the uppercase mono tag that names a gutter entry. */
+  .label-mono {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.6875rem;
+    line-height: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  /* Data: paths, branches, counts, timestamps. Tabular so columns align. */
+  .data-mono {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "ss01" on;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Indeterminate work: used only when filesTotal is not yet known, so the
+     surface says "running, amount unknown" instead of faking a percentage. */
+  .hatch-work {
+    background-image: repeating-linear-gradient(
+      -45deg,
+      var(--work) 0 2px,
+      transparent 2px 7px
+    );
+    background-size: 200% 100%;
+    animation: hatch-drift 1.1s linear infinite;
+  }
+
+  @keyframes hatch-drift {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 9.9px 0;
+    }
+  }
+
+  .caret-live::after {
+    content: "";
+    display: inline-block;
+    width: 0.5ch;
+    height: 1.05em;
+    margin-left: 0.15ch;
+    vertical-align: text-bottom;
+    background-color: var(--live);
+    animation: caret-blink 1.1s steps(2, start) infinite;
+  }
+
+  @keyframes caret-blink {
+    50% {
+      opacity: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hatch-work {
+    animation: none;
+  }
+
+  .caret-live::after {
+    animation: none;
+  }
 }
