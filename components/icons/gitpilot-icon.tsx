@@ -5,7 +5,7 @@ import type { SVGProps } from "react";
  * Three lines of code, one of them cited — rendered in `live`, the same colour
  * the app uses everywhere to mean "this corpus can answer questions."
  */
-export function DevPilotIcon(props: SVGProps<SVGSVGElement>) {
+export function GitPilotIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true" {...props}>
       <rect width="32" height="32" rx="7.5" fill="var(--ink)" />

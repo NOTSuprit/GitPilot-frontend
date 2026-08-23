@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { DevPilotIcon } from "@/components/icons/devpilot-icon";
+import { GitPilotIcon } from "@/components/icons/gitpilot-icon";
 import { AccountMenu } from "@/components/layout/account-menu";
 import { Micro } from "@/components/layout/listing";
 import { ModeToggle } from "@/components/ui/mode-toggle";
@@ -41,7 +41,7 @@ export function AppShell({
   actions,
 }: {
   children: React.ReactNode;
-  /** Where you are, shown in the bar as `devpilot / <crumb>`. Not a heading — the page owns its `<h1>`. */
+  /** Where you are, shown in the bar as `gitpilot / <crumb>`. Not a heading — the page owns its `<h1>`. */
   crumb?: string;
   actions?: React.ReactNode;
 }) {
@@ -56,13 +56,13 @@ export function AppShell({
               <SidebarMenuButton
                 size="lg"
                 render={<Link href="/dashboard" />}
-                tooltip="devPilot"
+                tooltip="GitPilot"
                 className="gap-2.5"
               >
-                <DevPilotIcon className="size-7 rounded-[6px]" />
+                <GitPilotIcon className="size-7 rounded-[6px]" />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate font-mono text-sm font-semibold tracking-tight">
-                    devPilot
+                    GitPilot
                   </span>
                   <span className="label-mono truncate text-ink-faint">
                     repo → index → answer
@@ -148,7 +148,7 @@ function AppBar({
 function Crumb({ crumb }: { crumb?: string }) {
   return (
     <p className="min-w-0 truncate">
-      <Micro className="text-ink-faint">devpilot</Micro>
+      <Micro className="text-ink-faint">gitpilot</Micro>
       {crumb && (
         <>
           <span aria-hidden className="label-mono mx-1.5 text-rule-strong">
@@ -171,10 +171,10 @@ export function BrandMark({
 }) {
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
-      <DevPilotIcon className="size-7 rounded-[6px]" />
+      <GitPilotIcon className="size-7 rounded-[6px]" />
       <span className="grid leading-tight">
         <span className="font-mono text-sm font-semibold tracking-tight">
-          devPilot
+          GitPilot
         </span>
         {showTagline && (
           <span className="label-mono text-ink-faint">

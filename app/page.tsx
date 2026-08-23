@@ -50,7 +50,7 @@ export default function HomePage() {
               </h1>
 
               <p className="mt-5 max-w-[46rem] text-sm leading-relaxed text-ink-soft sm:text-base">
-                devPilot indexes a GitHub repository into a vector store, then
+                GitPilot indexes a GitHub repository into a vector store, then
                 answers from the chunks it retrieves — never from memory of the
                 internet. Every response arrives with the file paths and line
                 ranges it was built from, each one a link into your default
@@ -83,7 +83,7 @@ export default function HomePage() {
 
       <footer className="border-t border-rule">
         <div className="mx-auto flex w-full max-w-[78rem] flex-wrap items-center justify-between gap-3 px-4 py-5">
-          <Micro>devpilot · repo → index → answer</Micro>
+          <Micro>gitpilot · repo → index → answer</Micro>
           <Micro className="text-rule-strong">
             end of page
           </Micro>
