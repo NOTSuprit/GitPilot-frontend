@@ -1,69 +1,94 @@
-import Image from "next/image";
+import { Capabilities } from "@/components/landing/capabilities";
+import { FinalCta } from "@/components/landing/final-cta";
+import { GithubCta } from "@/components/landing/github-cta";
+import { HeroFigure } from "@/components/landing/hero-figure";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { LandingNav } from "@/components/landing/landing-nav";
+import { PipelineLedger } from "@/components/landing/pipeline-ledger";
+import { Micro } from "@/components/layout/listing";
 
-export default function Home() {
+/**
+ * The public landing page.
+ *
+ * This is a Server Component and stays one. The only client JavaScript the page
+ * ships is the theme toggle and the hero figure — and the figure's Three.js is
+ * behind `next/dynamic({ ssr: false })`, so the headline, the copy and the
+ * GitHub CTA are all server-rendered HTML that work before any script arrives.
+ * The CTA in particular is a plain `<a>`: sign-in does not depend on hydration.
+ *
+ * Structure follows the app's own "listing" grammar — an 11rem monospace gutter
+ * naming each section, a hairline separating it from the measure, and rules
+ * instead of cards for every division. It should read as the same product as
+ * the dashboard, shot on a longer lens.
+ */
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+    <div className="flex min-h-svh flex-col">
+      <LandingNav />
+
+      <main id="main" className="flex-1">
+        {/* ---------------------------------------------------------- hero --- */}
+        <section
+          aria-labelledby="hero-heading"
+          className="mx-auto w-full max-w-[78rem] px-4 pt-10 pb-14 md:pt-16 md:pb-20"
+        >
+          <div className="lg:grid lg:grid-cols-[11rem_minmax(0,1fr)]">
+            <div className="lg:border-r lg:border-rule lg:pr-4">
+              <Micro>grounded code assistant</Micro>
+            </div>
+
+            <div className="mt-4 lg:mt-0 lg:pl-6">
+              <h1
+                id="hero-heading"
+                className="max-w-3xl font-mono text-[1.75rem] leading-[1.12] font-semibold tracking-tight text-balance sm:text-4xl lg:text-[2.75rem]"
+              >
+                Ask your codebase a question.
+                <br className="hidden sm:block" />{" "}
+                <span className="text-ink-soft">
+                  Get the lines that answer it.
+                </span>
+              </h1>
+
+              <p className="mt-5 max-w-[46rem] text-sm leading-relaxed text-ink-soft sm:text-base">
+                devPilot indexes a GitHub repository into a vector store, then
+                answers from the chunks it retrieves — never from memory of the
+                internet. Every response arrives with the file paths and line
+                ranges it was built from, each one a link into your default
+                branch.
+              </p>
+
+              <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-3">
+                <GithubCta />
+                <span className="label-mono text-ink-soft">
+                  read-only access · no writes to your repositories
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* The figure gets the full measure — it is the argument, not a
+              garnish beside the copy. */}
+          <div className="mt-10 md:mt-14">
+            <HeroFigure />
+          </div>
+        </section>
+
+        <div className="mx-auto w-full max-w-[78rem] px-4">
+          <HowItWorks />
+          <PipelineLedger />
+          <Capabilities />
+          <FinalCta />
         </div>
       </main>
+
+      <footer className="border-t border-rule">
+        <div className="mx-auto flex w-full max-w-[78rem] flex-wrap items-center justify-between gap-3 px-4 py-5">
+          <Micro>devpilot · repo → index → answer</Micro>
+          <Micro className="text-rule-strong">
+            end of page
+          </Micro>
+        </div>
+      </footer>
     </div>
   );
 }
