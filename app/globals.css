@@ -5,55 +5,84 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================================
-   devPilot — "the listing"
+   GitPilot — "Pixel RAG Lab"
    ----------------------------------------------------------------------------
-   One metaphor governs the whole product: a printed source listing. Content
-   sits in a right-hand column; a monospace gutter on the left carries
-   provenance and metadata; a hairline rule separates them. Structure comes
-   from rules, not from cards or shadows.
+   The structure of the app is still the printed listing: content in a right
+   column, a monospace gutter for provenance, rules rather than decoration.
+   The pixel layer sits on top of that grammar: square corners, 2px edges,
+   hard offset shadows, and a pixel face reserved for headings and tiny labels.
 
-   Six named tokens. Each owns one job.
+   Palette (dark = night terminal, light = warm paper)
 
-     paper   page substrate
-     ink     every glyph of text
-     rule    every divider, gutter line, field edge  <- the workhorse
-     live    "this corpus is queryable" — READY, primary action, focus, caret
-     work    "indexing is happening" — the only warm hue in the system
-     fault   "this broke" — FAILED status, errorMessage, destructive actions
+     paper     page substrate            #10151B  /  #F4EBD8
+     panel     raised surfaces           #202B35  /  #FBF6EA
+     ink       every glyph of text       #F4EBD8  /  #10151B
+     live      index green  — READY, primary action, focus, caret
+     vector    vector cyan  — embeddings, streaming
+     retrieve  retrieval violet — retrieval, citations
+     work      amber — indexing in progress (the only warm hue)
+     fault     red   — failure, destructive actions
 
-   Honest accounting: the READY steady state — which is most of the pixels a
-   user ever sees — is paper / ink / rule / live. `work` and `fault` are
-   state-conditional and genuinely rare. That rarity is the point: when
-   something warm appears on screen, work is being done, no legend required.
+   Brand hexes are used verbatim on the dark theme. On warm paper the bright
+   green/cyan/violet fail text contrast, so `--live`, `--vector` and
+   `--retrieve` are darkened for text and fills; the bright index green stays
+   available as `--live-fill` for buttons, where it carries dark ink text.
 
-   The shadcn/Base UI token contract below is aliased onto these six, so every
-   primitive inherits the system instead of re-declaring it.
+   The shadcn/Base UI token contract below is aliased onto these tokens, so
+   every primitive inherits the system instead of re-declaring it.
    ============================================================================ */
 
 :root {
-  /* --- the six --- */
-  --paper: oklch(0.985 0.003 145);
-  --ink: oklch(0.21 0.012 175);
-  --rule: oklch(0.885 0.007 175);
-  --live: oklch(0.47 0.115 198);
-  --work: oklch(0.62 0.145 62);
-  --fault: oklch(0.52 0.19 25);
+  /* --- core tokens (light: warm paper) --- */
+  --paper: #f4ebd8;
+  --ink: #10151b;
+  --rule: #d2c5a6;
+  --live: #2f6b1e;
+  --work: #875800;
+  --fault: #b3261e;
+  --vector: #0b6b7e;
+  --retrieve: #6a40c4;
 
-  /* --- steps derived from the six (no new hues introduced) --- */
-  --paper-raised: oklch(1 0 0);
-  --paper-sunken: oklch(0.962 0.004 160);
-  --paper-field: oklch(0.947 0.005 160);
-  --ink-soft: oklch(0.475 0.014 178);
-  --ink-faint: oklch(0.615 0.012 178);
-  --rule-strong: oklch(0.8 0.01 178);
-  --live-fg: oklch(0.99 0.004 198);
-  --live-tint: oklch(0.955 0.026 198);
-  --work-fg: oklch(0.99 0.004 62);
-  --work-tint: oklch(0.965 0.03 68);
-  --fault-fg: oklch(0.99 0.004 25);
-  --fault-tint: oklch(0.962 0.02 25);
+  /* --- steps --- */
+  --paper-raised: #fbf6ea;
+  --paper-sunken: #ebe0c8;
+  --paper-field: #e2d6ba;
+  --ink-soft: #424c57;
+  --ink-faint: #545d68;
+  --rule-strong: #82785e;
+  --live-fg: #f4ebd8;
+  --live-tint: #dce7bc;
+  --work-fg: #fbf6ea;
+  --work-tint: #f0ddb0;
+  --fault-fg: #fbf6ea;
+  --fault-tint: #f0d2c5;
+  --vector-fg: #fbf6ea;
+  --vector-tint: #cfe3dc;
+  --retrieve-fg: #fbf6ea;
+  --retrieve-tint: #e1d8f0;
 
-  --radius: 0.375rem;
+  /* Bright index green: the brand fill. Carries dark ink text in both themes. */
+  --live-fill: #b8f58a;
+  --live-fill-fg: #10151b;
+  --live-deep: color-mix(in oklch, var(--live-fill) 45%, black);
+
+  /* --- pixel surface tokens --- */
+  --pixel-edge: var(--rule-strong);
+  --pixel-shadow-color: #10151b;
+  --pixel-grid: color-mix(in oklch, var(--rule) 60%, transparent);
+
+  /* The landing scene and CRT are always "night", in both themes. */
+  --scene: #10151b;
+  --scene-panel: #202b35;
+  --scene-edge: #4a5d6f;
+  --scene-ink: #f4ebd8;
+  --scene-dim: #8d9aa3;
+  --scene-live: #b8f58a;
+  --scene-vector: #73d7e9;
+  --scene-retrieve: #c5a5ff;
+  --scene-work: #f2b84b;
+
+  --radius: 0.125rem;
 
   /* --- shadcn / Base UI contract --- */
   --background: var(--paper);
@@ -62,8 +91,8 @@
   --card-foreground: var(--ink);
   --popover: var(--paper-raised);
   --popover-foreground: var(--ink);
-  --primary: var(--live);
-  --primary-foreground: var(--live-fg);
+  --primary: var(--live-fill);
+  --primary-foreground: var(--live-fill-fg);
   --secondary: var(--paper-sunken);
   --secondary-foreground: var(--ink);
   --muted: var(--paper-sunken);
@@ -73,58 +102,61 @@
   --destructive: var(--fault);
   --success: var(--live);
   --border: var(--rule);
-  --input: var(--rule-strong);
+  --input: #85785c;
   --ring: var(--live);
 
   --chart-1: var(--live);
-  --chart-2: oklch(0.6 0.09 198);
-  --chart-3: var(--work);
-  --chart-4: oklch(0.72 0.03 178);
-  --chart-5: oklch(0.4 0.02 178);
+  --chart-2: var(--vector);
+  --chart-3: var(--retrieve);
+  --chart-4: var(--work);
+  --chart-5: var(--ink-soft);
 
   /* The nav rail is the desk the listing sits on: one step sunken. */
-  --sidebar: oklch(0.955 0.005 160);
+  --sidebar: #ebe0c8;
   --sidebar-foreground: var(--ink);
-  --sidebar-primary: var(--live);
-  --sidebar-primary-foreground: var(--live-fg);
-  --sidebar-accent: oklch(0.925 0.008 165);
+  --sidebar-primary: var(--live-fill);
+  --sidebar-primary-foreground: var(--live-fill-fg);
+  --sidebar-accent: #e2d6ba;
   --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: oklch(0.87 0.008 170);
+  --sidebar-border: #cdbf9e;
   --sidebar-ring: var(--live);
 }
 
-/* Dark is a blueprint inversion, not a grey inversion: the paper keeps its
-   cool green-blue cast so `live` still reads as the same material. */
+/* Night terminal. Brand hexes verbatim. */
 .dark {
-  --paper: oklch(0.185 0.013 192);
-  --ink: oklch(0.95 0.005 175);
-  --rule: oklch(0.335 0.014 186);
-  --live: oklch(0.76 0.125 198);
-  --work: oklch(0.78 0.145 68);
-  --fault: oklch(0.68 0.185 25);
+  --paper: #10151b;
+  --ink: #f4ebd8;
+  --rule: #2e3b47;
+  --live: #b8f58a;
+  --work: #f2b84b;
+  --fault: #ff7f70;
+  --vector: #73d7e9;
+  --retrieve: #c5a5ff;
 
-  --paper-raised: oklch(0.228 0.014 192);
-  --paper-sunken: oklch(0.262 0.014 190);
-  --paper-field: oklch(0.288 0.015 190);
-  --ink-soft: oklch(0.7 0.014 180);
-  --ink-faint: oklch(0.575 0.013 182);
-  --rule-strong: oklch(0.42 0.016 186);
-  --live-fg: oklch(0.17 0.03 198);
-  --live-tint: oklch(0.3 0.045 198);
-  --work-fg: oklch(0.18 0.03 62);
-  --work-tint: oklch(0.31 0.05 62);
-  --fault-fg: oklch(0.16 0.03 25);
-  --fault-tint: oklch(0.3 0.055 25);
+  --paper-raised: #202b35;
+  --paper-sunken: #0b1015;
+  --paper-field: #2a3745;
+  --ink-soft: #b7b3a6;
+  --ink-faint: #96a2aa;
+  --rule-strong: #73818f;
+  --live-fg: #10151b;
+  --live-tint: #213a2a;
+  --work-fg: #1a1305;
+  --work-tint: #3b3016;
+  --fault-fg: #1c0a08;
+  --fault-tint: #442423;
+  --vector-fg: #0b1a1e;
+  --vector-tint: #1b3a44;
+  --retrieve-fg: #1b1230;
+  --retrieve-tint: #33294f;
 
-  --chart-2: oklch(0.58 0.09 198);
-  --chart-4: oklch(0.5 0.03 178);
-  --chart-5: oklch(0.75 0.02 178);
+  --pixel-shadow-color: #05080b;
 
-  --sidebar: oklch(0.155 0.012 192);
-  --sidebar-foreground: var(--ink);
-  --sidebar-accent: oklch(0.245 0.015 190);
-  --sidebar-accent-foreground: var(--ink);
-  --sidebar-border: oklch(0.29 0.014 188);
+  --input: #6e8295;
+
+  --sidebar: #0c1116;
+  --sidebar-accent: #202b35;
+  --sidebar-border: #2e3b47;
 }
 
 @theme inline {
@@ -161,7 +193,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* the six, addressable directly */
+  /* core tokens, addressable directly */
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
   --color-paper-sunken: var(--paper-sunken);
@@ -174,19 +206,45 @@
   --color-live: var(--live);
   --color-live-fg: var(--live-fg);
   --color-live-tint: var(--live-tint);
+  --color-live-fill: var(--live-fill);
+  --color-live-fill-fg: var(--live-fill-fg);
+  --color-live-deep: var(--live-deep);
   --color-work: var(--work);
   --color-work-fg: var(--work-fg);
   --color-work-tint: var(--work-tint);
   --color-fault: var(--fault);
   --color-fault-fg: var(--fault-fg);
   --color-fault-tint: var(--fault-tint);
+  --color-vector: var(--vector);
+  --color-vector-fg: var(--vector-fg);
+  --color-vector-tint: var(--vector-tint);
+  --color-retrieve: var(--retrieve);
+  --color-retrieve-fg: var(--retrieve-fg);
+  --color-retrieve-tint: var(--retrieve-tint);
+  --color-pixel-edge: var(--pixel-edge);
 
-  /* Three roles, two families. Mono is promoted to display: headings that
-     look like identifiers, because the repo is the object being queried. */
+  --color-scene: var(--scene);
+  --color-scene-panel: var(--scene-panel);
+  --color-scene-edge: var(--scene-edge);
+  --color-scene-ink: var(--scene-ink);
+  --color-scene-dim: var(--scene-dim);
+  --color-scene-live: var(--scene-live);
+  --color-scene-vector: var(--scene-vector);
+  --color-scene-retrieve: var(--scene-retrieve);
+  --color-scene-work: var(--scene-work);
+
+  /* Faces. Pixel faces are opt-in (`font-pixel`, `font-pixel-label`); headings
+     stay mono until a stage adopts them deliberately. */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-geist-mono);
   --font-heading: var(--font-geist-mono);
+  --font-pixel: var(--font-pixel-display), ui-monospace, monospace;
+  --font-pixel-label: var(--font-pixel-micro), ui-monospace, monospace;
+
+  /* Hard offset shadows: no blur, so they stay on the pixel grid. */
+  --shadow-pixel: 3px 3px 0 0 var(--pixel-shadow-color);
+  --shadow-pixel-sm: 2px 2px 0 0 var(--pixel-shadow-color);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -293,6 +351,149 @@
       opacity: 0;
     }
   }
+
+  /* ---- pixel layer ------------------------------------------------------ */
+
+  /* Display face. One weight exists, so never let the browser fake a bold. */
+  .pixel-display {
+    font-family: var(--font-pixel);
+    font-weight: 500;
+    font-synthesis: none;
+    letter-spacing: 0;
+    line-height: 1.15;
+  }
+
+  /* Tiny uppercase label in the pixel face. Never for sentences or paths. */
+  .pixel-label {
+    font-family: var(--font-pixel-label);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 400;
+    font-synthesis: none;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* 16px source-tile grid. */
+  .pixel-grid-bg {
+    background-image:
+      linear-gradient(to right, var(--pixel-grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--pixel-grid) 1px, transparent 1px);
+    background-size: 16px 16px;
+  }
+
+  /* 4px checkerboard: a flat "dither" fill for tracks and empty wells. */
+  .pixel-dither {
+    background-image: conic-gradient(
+      var(--pixel-grid) 25%,
+      transparent 0 50%,
+      var(--pixel-grid) 0 75%,
+      transparent 0
+    );
+    background-size: 4px 4px;
+  }
+
+  /* CRT scanlines. Decorative only; always on an aria-hidden overlay. */
+  .pixel-scanlines {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0 2px,
+      color-mix(in oklch, var(--ink) 5%, transparent) 2px 3px
+    );
+  }
+
+  /* 4px studs in the four inside corners of a bordered panel. */
+  .pixel-corners {
+    background-image:
+      linear-gradient(var(--pixel-edge), var(--pixel-edge)),
+      linear-gradient(var(--pixel-edge), var(--pixel-edge)),
+      linear-gradient(var(--pixel-edge), var(--pixel-edge)),
+      linear-gradient(var(--pixel-edge), var(--pixel-edge));
+    background-size: 4px 4px;
+    background-repeat: no-repeat;
+    background-position:
+      0 0,
+      100% 0,
+      0 100%,
+      100% 100%;
+  }
+
+  /* Cell mask for determinate progress: 6px cell, 2px gap. */
+  .pixel-segments {
+    -webkit-mask-image: repeating-linear-gradient(
+      90deg,
+      #000 0 6px,
+      transparent 6px 8px
+    );
+    mask-image: repeating-linear-gradient(
+      90deg,
+      #000 0 6px,
+      transparent 6px 8px
+    );
+  }
+
+  /* Indeterminate progress: cells marching right. Only used when the total is
+     genuinely unknown, so the bar never implies a percentage. */
+  .pixel-indeterminate {
+    background-image: repeating-linear-gradient(
+      90deg,
+      currentColor 0 6px,
+      transparent 6px 14px
+    );
+    background-size: 14px 100%;
+    animation: pixel-march 0.8s steps(7) infinite;
+  }
+
+  @keyframes pixel-march {
+    from {
+      background-position: 0 0;
+    }
+    to {
+      background-position: 14px 0;
+    }
+  }
+
+  /* ---- landing scene: one 12s loop, four stages ------------------------- *
+   * Everything is fully visible by default. The loop only dims a stage and
+   * re-lights it in order, with hard steps (no easing), so the resting state
+   * and the reduced-motion state are the same complete picture.            */
+  .scene-s2 { animation: scene-s2 12s step-end infinite; }
+  .scene-s3 { animation: scene-s3 12s step-end infinite; }
+  .scene-s4 { animation: scene-s4 12s step-end infinite; }
+  .scene-s5 { animation: scene-s5 12s step-end infinite; }
+  .scene-packet { animation: scene-packet 12s steps(10, end) infinite; }
+  .scene-twinkle { animation: scene-twinkle 3s step-end infinite; }
+
+  @keyframes scene-s2 {
+    0% { opacity: 0.12; }
+    17% { opacity: 1; }
+    94% { opacity: 0.12; }
+  }
+  @keyframes scene-s3 {
+    0% { opacity: 0.12; }
+    33% { opacity: 1; }
+    94% { opacity: 0.12; }
+  }
+  @keyframes scene-s4 {
+    0% { opacity: 0.12; }
+    50% { opacity: 1; }
+    94% { opacity: 0.12; }
+  }
+  @keyframes scene-s5 {
+    0% { opacity: 0.12; }
+    67% { opacity: 1; }
+    94% { opacity: 0.12; }
+  }
+  @keyframes scene-packet {
+    0%, 17% { transform: translateX(0); opacity: 0; }
+    18% { opacity: 1; }
+    32% { transform: translateX(34px); opacity: 1; }
+    33%, 100% { transform: translateX(34px); opacity: 0; }
+  }
+  @keyframes scene-twinkle {
+    0% { opacity: 1; }
+    50% { opacity: 0.25; }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -305,8 +506,23 @@
     scroll-behavior: auto !important;
   }
 
-  .hatch-work {
+  .hatch-work,
+  .pixel-indeterminate {
     animation: none;
+  }
+
+  .scene-s2,
+  .scene-s3,
+  .scene-s4,
+  .scene-s5,
+  .scene-twinkle {
+    animation: none;
+    opacity: 1;
+  }
+
+  .scene-packet {
+    animation: none;
+    opacity: 0;
   }
 
   .caret-live::after {

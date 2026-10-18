@@ -1,9 +1,8 @@
 "use client";
 
-import { RefreshCw, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 import type { IndexStatus } from "@/lib/api";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Data } from "@/components/layout/listing";
 import { StatusGlyph, indexStatusLabel } from "@/components/dashboard/status-mark";
@@ -22,9 +21,8 @@ const VISIBILITY: { value: VisibilityFilter; label: string }[] = [
 const STATUS: StatusFilter[] = ["ALL", "READY", "INDEXING", "PENDING", "FAILED"];
 
 /**
- * Selection is expressed by inverting the substrate (ink on paper becomes
- * paper on ink) rather than by tinting, so `live` stays reserved for
- * "queryable" and never doubles as "you clicked this".
+ * Selection is a raised field with an ink underline, not a tint, so `live`
+ * stays reserved for "queryable" and never doubles as "you clicked this".
  */
 function Segment({
   active,
@@ -36,9 +34,9 @@ function Segment({
       type="button"
       aria-pressed={active}
       className={cn(
-        "label-mono inline-flex h-6 items-center gap-1.5 rounded-[3px] px-2 transition-colors",
+        "label-mono inline-flex h-7 items-center gap-1.5 px-2.5 transition-colors",
         active
-          ? "bg-ink text-paper"
+          ? "bg-paper-field text-ink shadow-[inset_0_-2px_0_0_var(--ink)]"
           : "text-ink-soft hover:bg-accent hover:text-ink"
       )}
       {...props}
@@ -59,7 +57,7 @@ function SegmentGroup({
     <div
       role="group"
       aria-label={label}
-      className="inline-flex items-center gap-0.5 rounded-md border border-rule bg-card p-0.5"
+      className="inline-flex items-center gap-0.5 border-2 border-rule-strong bg-card p-0.5"
     >
       {children}
     </div>
@@ -74,10 +72,7 @@ export function RepoToolbar({
   status,
   onStatusChange,
   totalCount,
-  readyCount,
   matchCount,
-  onSync,
-  isSyncing,
 }: {
   search: string;
   onSearchChange: (value: string) => void;
@@ -86,68 +81,38 @@ export function RepoToolbar({
   status: StatusFilter;
   onStatusChange: (value: StatusFilter) => void;
   totalCount: number;
-  readyCount: number;
   matchCount: number;
-  onSync: () => void;
-  isSyncing: boolean;
 }) {
   const filtered = matchCount !== totalCount;
 
   return (
-    <div className="flex flex-col gap-3 border-b border-rule pb-3">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-mono text-lg leading-tight font-semibold tracking-tight">
-            Repositories
-          </h1>
-          <Data className="mt-0.5 block">
-            {num(totalCount)} connected · {num(readyCount)} queryable
-            {filtered && <> · {num(matchCount)} shown</>}
-          </Data>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search
-              aria-hidden
-              className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-ink-faint"
-            />
-            <Input
-              type="search"
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="filter by name, description, language"
-              aria-label="Filter repositories"
-              className="data-mono h-8 w-full pl-8 text-xs sm:w-80"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => onSearchChange("")}
-                aria-label="Clear filter"
-                className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded-[3px] p-1 text-ink-faint hover:bg-accent hover:text-ink"
-              >
-                <X className="size-3" />
-              </button>
-            )}
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onSync}
-            disabled={isSyncing}
-          >
-            <RefreshCw
-              data-icon="inline-start"
-              className={cn(isSyncing && "animate-spin")}
-            />
-            {isSyncing ? "Syncing" : "Sync"}
-          </Button>
-        </div>
-      </div>
-
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full sm:w-80">
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-ink-faint"
+          />
+          <Input
+            type="search"
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="filter by name, description, language"
+            aria-label="Filter repositories"
+            className="data-mono h-8 w-full rounded-none border-2 pl-8 text-xs"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => onSearchChange("")}
+              aria-label="Clear filter"
+              className="absolute top-1/2 right-1.5 -translate-y-1/2 p-1 text-ink-faint hover:bg-accent hover:text-ink"
+            >
+              <X className="size-3" />
+            </button>
+          )}
+        </div>
+
         <SegmentGroup label="Filter by visibility">
           {VISIBILITY.map((item) => (
             <Segment
@@ -172,6 +137,12 @@ export function RepoToolbar({
             </Segment>
           ))}
         </SegmentGroup>
+
+        {filtered && (
+          <Data className="ml-auto" aria-live="polite">
+            {num(matchCount)} of {num(totalCount)} shown
+          </Data>
+        )}
       </div>
     </div>
   );

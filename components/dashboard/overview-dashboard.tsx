@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, MessageSquareCode, RefreshCw } from "lucide-react";
 
+import { IndexError } from "@/components/dashboard/index-error";
+import { IndexProgress } from "@/components/dashboard/index-progress";
 import { LanguageMark } from "@/components/dashboard/language-mark";
 import {
   indexStatusLabel,
@@ -10,18 +12,36 @@ import {
   StatusMark,
 } from "@/components/dashboard/status-mark";
 import { Data, Micro } from "@/components/layout/listing";
+import {
+  PixelEmptyState,
+  PixelPanel,
+  PixelSectionHeader,
+} from "@/components/pixel";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRepos } from "@/hooks/use-repos";
-import type { IndexStatus } from "@/lib/api";
+import type { IndexStatus, Repository } from "@/lib/api";
 import { ago, agoShort, num } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
- * The overview is a ledger, not a card wall: four figures in a mono row, then
- * the two lists that actually answer "what can I ask right now" and "what is
- * still cooking". No sparklines — there is no time series behind them.
+ * The overview answers three questions from the repository list alone — what
+ * can I ask right now, what is still being built, what broke — so every figure
+ * here is a count or a sum over repositories the dashboard already loaded.
+ * There is no activity log, no history, no query analytics: the backend serves
+ * none of them, and a chart with nothing behind it would be decoration.
+ *
+ * Indexing runs on the same 2-second poll the dashboard uses, so the in-flight
+ * progress below moves without any extra requests.
  */
 const ORDER: IndexStatus[] = ["READY", "INDEXING", "PENDING", "FAILED"];
+
+const SEGMENT_FILL: Record<IndexStatus, string> = {
+  READY: "bg-live",
+  INDEXING: "bg-work",
+  PENDING: "bg-ink-faint",
+  FAILED: "bg-fault",
+};
 
 function Figure({
   label,
@@ -35,21 +55,107 @@ function Figure({
   tone?: "live" | "work" | "fault";
 }) {
   return (
-    <div className="border-l-2 border-rule pl-3">
-      <Micro>{label}</Micro>
+    <PixelPanel
+      tone={tone === "fault" ? "fault" : "default"}
+      className="px-4 py-3 shadow-pixel-sm"
+    >
+      <Micro className="block">{label}</Micro>
       <p
         className={cn(
-          "data-mono mt-0.5 text-2xl leading-none font-semibold tracking-tight",
+          "pixel-display tabular mt-1 text-4xl leading-none",
           tone === "live" && "text-live",
           tone === "work" && "text-work",
           tone === "fault" && "text-fault",
-          !tone && "text-ink"
+          !tone && "text-foreground"
         )}
       >
         {value}
       </p>
-      <p className="mt-1 text-[0.6875rem] leading-4 text-ink-faint">{hint}</p>
+      <p className="mt-2 text-[0.6875rem] leading-4 text-ink-faint">{hint}</p>
+    </PixelPanel>
+  );
+}
+
+function Panel({
+  title,
+  action,
+  children,
+  className,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <PixelPanel className={cn("shadow-pixel-sm", className)}>
+      <div className="flex items-baseline justify-between gap-3 border-b-2 border-rule px-4 py-2.5">
+        <h2 className="pixel-display text-base text-foreground">{title}</h2>
+        {action}
+      </div>
+      <div className="px-4 py-3">{children}</div>
+    </PixelPanel>
+  );
+}
+
+/**
+ * The workspace as one bar: segment widths are the real status counts, so the
+ * picture and the numbers cannot disagree. Zero-count states have no segment.
+ */
+function StateBar({
+  counts,
+  total,
+}: {
+  counts: Record<IndexStatus, number>;
+  total: number;
+}) {
+  const summary = ORDER.map(
+    (s) => `${counts[s]} ${indexStatusLabel[s].toLowerCase()}`
+  ).join(", ");
+
+  return (
+    <div
+      role="img"
+      aria-label={`${total} repositories: ${summary}`}
+      className="flex h-3 w-full gap-0.5 border-2 border-rule-strong bg-paper-sunken p-0.5"
+    >
+      {ORDER.filter((s) => counts[s] > 0).map((s) => (
+        <span
+          key={s}
+          className={cn("h-full min-w-1", SEGMENT_FILL[s])}
+          style={{ flexGrow: counts[s], flexBasis: 0 }}
+        />
+      ))}
     </div>
+  );
+}
+
+function RecentRow({ repo }: { repo: Repository }) {
+  const ready = repo.indexStatus === "READY";
+  return (
+    <li className="border-b border-rule last:border-b-0">
+      <Link
+        href={ready ? `/chat/${repo.id}` : "/dashboard"}
+        aria-label={`${ready ? "Chat with" : "Open the dashboard for"} ${repo.fullName}`}
+        className="group/row grid items-center gap-x-3 gap-y-1 px-1 py-2.5 transition-colors hover:bg-accent sm:grid-cols-[minmax(0,1fr)_6.5rem_4.5rem_6rem_4rem]"
+      >
+        <span className="min-w-0 font-mono text-[0.8125rem] leading-tight tracking-tight">
+          <span className="text-ink-faint">{repo.owner}/</span>
+          <span className="font-semibold">{repo.name}</span>
+        </span>
+        <LanguageMark language={repo.language} />
+        <Data className="tabular sm:text-right">
+          {repo.chunkCount > 0 ? `${num(repo.chunkCount)} ch` : "—"}
+        </Data>
+        <StatusMark status={repo.indexStatus} />
+        <Data
+          className="text-ink-faint sm:text-right"
+          title={ago(repo.indexedAt) ?? "never indexed"}
+        >
+          {agoShort(repo.indexedAt) ?? "never"}
+        </Data>
+      </Link>
+    </li>
   );
 }
 
@@ -57,42 +163,101 @@ export function OverviewDashboard() {
   const reposQuery = useRepos();
   const repos = reposQuery.data ?? [];
 
-  const count = (status: IndexStatus) =>
-    repos.filter((repo) => repo.indexStatus === status).length;
+  const counts: Record<IndexStatus, number> = {
+    READY: 0,
+    INDEXING: 0,
+    PENDING: 0,
+    FAILED: 0,
+  };
+  for (const repo of repos) counts[repo.indexStatus] += 1;
 
-  const readyCount = count("READY");
-  const indexingCount = count("INDEXING");
-  const failedCount = count("FAILED");
   const totalChunks = repos.reduce((sum, repo) => sum + repo.chunkCount, 0);
+  const indexing = repos.filter((r) => r.indexStatus === "INDEXING");
+  const failed = repos.filter((r) => r.indexStatus === "FAILED");
 
-  const recentRepos = [...repos]
-    .sort((a, b) => {
-      const aTime = a.indexedAt ? new Date(a.indexedAt).getTime() : 0;
-      const bTime = b.indexedAt ? new Date(b.indexedAt).getTime() : 0;
-      return bTime - aTime;
-    })
-    .slice(0, 5);
+  // Only repositories that actually have an indexed-at timestamp: "recently
+  // indexed" is a statement about time, so a never-indexed repo has no place.
+  const recent = repos
+    .filter((r) => r.indexedAt)
+    .sort(
+      (a, b) =>
+        new Date(b.indexedAt as string).getTime() -
+        new Date(a.indexedAt as string).getTime()
+    )
+    .slice(0, 6);
 
   return (
     <div className="mx-auto flex w-full max-w-[80rem] flex-1 flex-col gap-6 p-4 md:p-6">
-      <div className="border-b border-rule pb-3">
-        <h1 className="font-mono text-lg leading-tight font-semibold tracking-tight">
-          Overview
-        </h1>
-        <Data className="mt-0.5 block">
-          the state of your queryable corpus
-        </Data>
-      </div>
+      <PixelSectionHeader
+        as="h1"
+        label="workspace"
+        title="Overview"
+        description="The state of your queryable corpus, counted from your connected repositories."
+        actions={
+          <Button
+            variant="pixel-outline"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/dashboard" />}
+          >
+            All repositories
+            <ArrowRight data-icon="inline-end" />
+          </Button>
+        }
+      />
 
-      <section aria-label="Workspace figures">
-        {reposQuery.isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {reposQuery.isError ? (
+        <PixelEmptyState
+          tone="fault"
+          title="Couldn’t load your repositories"
+          description={
+            <span className="data-mono break-words">
+              {(reposQuery.error as Error).message}
+            </span>
+          }
+        >
+          <Button
+            variant="pixel-outline"
+            size="sm"
+            onClick={() => void reposQuery.refetch()}
+          >
+            <RefreshCw data-icon="inline-start" />
+            Try again
+          </Button>
+        </PixelEmptyState>
+      ) : reposQuery.isLoading ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-busy>
             {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 rounded-md" />
+              <Skeleton key={i} className="h-28 rounded-none" />
             ))}
           </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+            <Skeleton className="h-64 rounded-none" />
+            <Skeleton className="h-64 rounded-none" />
+          </div>
+        </>
+      ) : repos.length === 0 ? (
+        <PixelEmptyState
+          title="No repositories connected yet"
+          description="Sync your GitHub repositories from the dashboard, then index one to make it queryable. This page fills in as soon as there is something to count."
+        >
+          <Button
+            variant="pixel"
+            size="sm"
+            nativeButton={false}
+            render={<Link href="/dashboard" />}
+          >
+            Go to repositories
+            <ArrowRight data-icon="inline-end" />
+          </Button>
+        </PixelEmptyState>
+      ) : (
+        <>
+          <section
+            aria-label="Workspace figures"
+            className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+          >
             <Figure
               label="repositories"
               value={num(repos.length)}
@@ -100,160 +265,145 @@ export function OverviewDashboard() {
             />
             <Figure
               label="queryable"
-              value={num(readyCount)}
+              value={num(counts.READY)}
               hint={
-                indexingCount > 0
-                  ? `${num(indexingCount)} still indexing`
+                counts.INDEXING > 0
+                  ? `${num(counts.INDEXING)} still indexing`
                   : "indexes fully built"
               }
-              tone={readyCount > 0 ? "live" : undefined}
+              tone={counts.READY > 0 ? "live" : undefined}
             />
             <Figure
               label="chunks embedded"
               value={num(totalChunks)}
-              hint="retrievable code segments"
+              hint="summed over your repositories"
             />
             <Figure
               label="failed"
-              value={num(failedCount)}
-              hint={failedCount > 0 ? "needs a retry" : "nothing broken"}
-              tone={failedCount > 0 ? "fault" : undefined}
+              value={num(counts.FAILED)}
+              hint={counts.FAILED > 0 ? "needs a retry" : "nothing broken"}
+              tone={counts.FAILED > 0 ? "fault" : undefined}
             />
-          </div>
-        )}
-      </section>
+          </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <section>
-          <div className="flex items-baseline justify-between gap-3 border-b border-rule pb-2">
-            <h2 className="font-mono text-sm font-semibold tracking-tight">
-              Most recently indexed
-            </h2>
-            <Link
-              href="/dashboard"
-              className="label-mono inline-flex items-center gap-1 text-live hover:underline"
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+            <Panel
+              title="Most recently indexed"
+              action={
+                <Link
+                  href="/dashboard"
+                  className="label-mono inline-flex items-center gap-1 text-live hover:underline"
+                >
+                  all repositories
+                  <ArrowRight aria-hidden className="size-3" />
+                </Link>
+              }
             >
-              all repositories
-              <ArrowRight aria-hidden className="size-3" />
-            </Link>
-          </div>
+              {recent.length > 0 ? (
+                <ul>
+                  {recent.map((repo) => (
+                    <RecentRow key={repo.id} repo={repo} />
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs leading-relaxed text-ink-soft">
+                  Nothing has finished indexing yet.{" "}
+                  <Link href="/dashboard" className="text-live underline underline-offset-4">
+                    Start an index
+                  </Link>{" "}
+                  from the repositories page.
+                </p>
+              )}
+              {recent.length > 0 && counts.READY > 0 && (
+                <p className="mt-3 flex items-center gap-1.5 border-t-2 border-rule pt-2 text-[0.6875rem] text-ink-faint">
+                  <MessageSquareCode aria-hidden className="size-3" />
+                  Select a queryable repository to open its chat.
+                </p>
+              )}
+            </Panel>
 
-          {reposQuery.isLoading ? (
-            <div className="mt-2 space-y-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-8 rounded-[3px]" />
-              ))}
-            </div>
-          ) : recentRepos.length > 0 ? (
-            <ul>
-              {recentRepos.map((repo) => (
-                <li key={repo.id} className="border-b border-rule last:border-b-0">
-                  <Link
-                    href={
-                      repo.indexStatus === "READY"
-                        ? `/chat/${repo.id}`
-                        : "/dashboard"
-                    }
-                    className="grid items-center gap-x-3 gap-y-1 px-1 py-2.5 transition-colors hover:bg-accent/60 sm:grid-cols-[minmax(0,1fr)_7rem_5rem_5.5rem]"
-                  >
-                    <span className="min-w-0 font-mono text-[0.8125rem] leading-tight tracking-tight">
-                      <span className="text-ink-faint">{repo.owner}/</span>
-                      <span className="font-semibold">{repo.name}</span>
-                    </span>
-                    <LanguageMark language={repo.language} />
-                    <Data className="tabular sm:text-right">
-                      {repo.chunkCount > 0 ? num(repo.chunkCount) : "—"}
-                    </Data>
-                    <Data
-                      className="text-ink-faint"
-                      title={ago(repo.indexedAt) ?? "never indexed"}
+            <div className="flex flex-col gap-6">
+              <Panel title="Index states">
+                <StateBar counts={counts} total={repos.length} />
+                <ul className="mt-3">
+                  {ORDER.map((status) => (
+                    <li
+                      key={status}
+                      className="flex items-center justify-between gap-3 border-b border-rule py-2 last:border-b-0"
                     >
-                      {agoShort(repo.indexedAt) ?? "never"}
-                    </Data>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-xs leading-relaxed text-ink-soft">
-              Nothing indexed yet.{" "}
-              <Link href="/dashboard" className="text-live hover:underline">
-                Sync your repositories
-              </Link>{" "}
-              to get started.
-            </p>
-          )}
-        </section>
-
-        <section>
-          <h2 className="border-b border-rule pb-2 font-mono text-sm font-semibold tracking-tight">
-            Index states
-          </h2>
-          {reposQuery.isLoading ? (
-            <div className="mt-2 space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-6 rounded-[3px]" />
-              ))}
-            </div>
-          ) : (
-            <ul>
-              {ORDER.map((status) => {
-                const value = count(status);
-                return (
-                  <li
-                    key={status}
-                    className="flex items-center justify-between gap-3 border-b border-rule py-2 last:border-b-0"
-                  >
-                    <span className="flex items-center gap-2">
-                      <StatusGlyph status={status} />
-                      <Micro className="text-ink-soft">
-                        {indexStatusLabel[status]}
-                      </Micro>
-                    </span>
-                    <Data
-                      className={cn(
-                        "tabular text-sm",
-                        value === 0 && "text-ink-faint"
-                      )}
-                    >
-                      {num(value)}
-                    </Data>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          {failedCount > 0 && (
-            <p className="mt-3 border-l-2 border-fault bg-fault-tint/60 px-3 py-2 text-[0.6875rem] leading-4 text-ink">
-              {num(failedCount)} repository
-              {failedCount === 1 ? "" : "s"} failed to index.{" "}
-              <Link href="/dashboard" className="text-fault underline">
-                Review and retry
-              </Link>
-              .
-            </p>
-          )}
-
-          {indexingCount > 0 && (
-            <div className="mt-3">
-              <Micro className="mb-1.5 block">in flight</Micro>
-              <ul className="space-y-1.5">
-                {repos
-                  .filter((repo) => repo.indexStatus === "INDEXING")
-                  .map((repo) => (
-                    <li key={repo.id}>
-                      <Data className="block truncate text-ink">
-                        {repo.fullName}
+                      <span className="flex items-center gap-2">
+                        <StatusGlyph status={status} />
+                        <Micro className="text-ink-soft">
+                          {indexStatusLabel[status]}
+                        </Micro>
+                      </span>
+                      <Data
+                        className={cn(
+                          "tabular text-sm",
+                          counts[status] === 0 && "text-ink-faint"
+                        )}
+                      >
+                        {num(counts[status])}
                       </Data>
-                      <StatusMark status="INDEXING" className="mt-0.5" />
                     </li>
                   ))}
-              </ul>
+                </ul>
+              </Panel>
+
+              {indexing.length > 0 && (
+                <Panel title="In flight">
+                  <ul className="space-y-4">
+                    {indexing.map((repo) => (
+                      <li key={repo.id}>
+                        <Data className="mb-1.5 block truncate text-ink">
+                          {repo.fullName}
+                        </Data>
+                        <IndexProgress
+                          filesProcessed={repo.filesProcessed}
+                          filesTotal={repo.filesTotal}
+                          chunkCount={repo.chunkCount}
+                          label={`Indexing ${repo.fullName}`}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </Panel>
+              )}
+
+              {failed.length > 0 && (
+                <PixelPanel tone="fault" className="shadow-pixel-sm">
+                  <div className="flex items-baseline justify-between gap-3 border-b-2 border-rule px-4 py-2.5">
+                    <h2 className="pixel-display text-base text-fault">
+                      Needs attention
+                    </h2>
+                    <Link
+                      href="/dashboard"
+                      className="label-mono text-fault underline underline-offset-4"
+                    >
+                      review and retry
+                    </Link>
+                  </div>
+                  <ul className="space-y-3 px-4 py-3">
+                    {failed.slice(0, 3).map((repo) => (
+                      <li key={repo.id}>
+                        <Data className="mb-1.5 block truncate text-ink">
+                          {repo.fullName}
+                        </Data>
+                        <IndexError message={repo.errorMessage} />
+                      </li>
+                    ))}
+                    {failed.length > 3 && (
+                      <li className="data-mono text-[0.6875rem] text-ink-faint">
+                        + {num(failed.length - 3)} more on the repositories page
+                      </li>
+                    )}
+                  </ul>
+                </PixelPanel>
+              )}
             </div>
-          )}
-        </section>
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

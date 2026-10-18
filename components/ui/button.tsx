@@ -18,6 +18,16 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",
+        // Pixel family: 2px edge, hard offset shadow, presses into the page.
+        // Controls stay in mono so labels remain readable at small sizes.
+        pixel:
+          "border-2 border-live-deep bg-live-fill font-mono text-xs tracking-[0.04em] text-live-fill-fg uppercase shadow-[2px_2px_0_0_var(--live-deep)] hover:brightness-105 active:not-aria-[haspopup]:translate-x-0.5 active:not-aria-[haspopup]:translate-y-0.5 active:shadow-none",
+        "pixel-outline":
+          "border-2 border-rule-strong bg-card font-mono text-xs tracking-[0.04em] text-foreground uppercase shadow-pixel-sm hover:border-ink-soft hover:bg-paper-field aria-expanded:bg-paper-field active:not-aria-[haspopup]:translate-x-0.5 active:not-aria-[haspopup]:translate-y-0.5 active:shadow-none",
+        "pixel-danger":
+          "border-2 border-fault bg-fault-tint font-mono text-xs tracking-[0.04em] text-fault uppercase shadow-[2px_2px_0_0_var(--fault)] hover:bg-fault hover:text-fault-fg active:not-aria-[haspopup]:translate-x-0.5 active:not-aria-[haspopup]:translate-y-0.5 active:shadow-none",
+        terminal:
+          "border border-live bg-paper-sunken font-mono text-xs tracking-[0.04em] text-live uppercase hover:bg-live-tint",
       },
       size: {
         default:

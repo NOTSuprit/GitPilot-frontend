@@ -96,7 +96,7 @@ export function LanguageMark({
       <span
         aria-hidden
         className={cn(
-          "size-2 shrink-0 rounded-[1.5px]",
+          "size-2.5 shrink-0 ring-1 ring-foreground/25 ring-inset",
           !color && "border border-rule-strong"
         )}
         style={color ? { backgroundColor: color } : undefined}

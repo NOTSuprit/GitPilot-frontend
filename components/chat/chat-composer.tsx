@@ -1,9 +1,7 @@
 "use client";
 
-import { useRef } from "react";
 import { CornerDownLeft, Square } from "lucide-react";
 
-import { Micro } from "@/components/layout/listing";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +10,11 @@ import { cn } from "@/lib/utils";
 /**
  * The composer keeps the thread's gutter, so what you are about to ask sits in
  * the same column as everything already asked. Controlled from above so the
- * example prompts in an empty thread can seed it.
+ * example prompts in an empty thread can seed it, and the textarea ref is
+ * lifted so picking an example can focus it.
+ *
+ * Below `md` the page itself scrolls, so the composer is pinned to the bottom
+ * edge rather than left at the end of a long thread.
  */
 export function ChatComposer({
   value,
@@ -21,6 +23,7 @@ export function ChatComposer({
   streaming,
   onSend,
   onStop,
+  textareaRef,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -28,8 +31,8 @@ export function ChatComposer({
   streaming?: boolean;
   onSend: (content: string) => void | Promise<void>;
   onStop?: () => void;
+  textareaRef?: React.Ref<HTMLTextAreaElement>;
 }) {
-  const ref = useRef<HTMLTextAreaElement>(null);
   const canSend = Boolean(value.trim()) && !disabled && !streaming;
 
   async function submit() {
@@ -40,11 +43,11 @@ export function ChatComposer({
   }
 
   return (
-    <div className="shrink-0 border-t border-rule bg-background/90 backdrop-blur-sm">
+    <div className="sticky bottom-0 z-10 shrink-0 border-t-2 border-rule-strong bg-background pb-[env(safe-area-inset-bottom)] md:static">
       <div className="mx-auto w-full max-w-5xl px-4 py-3">
-        <div className="lg:grid lg:grid-cols-[11rem_minmax(0,1fr)]">
-          <div className="hidden lg:block lg:border-r lg:border-rule lg:pr-4">
-            <Micro className="text-ink-faint">ask</Micro>
+        <div className="lg:grid lg:grid-cols-[12.5rem_minmax(0,1fr)]">
+          <div className="hidden lg:block lg:border-r-2 lg:border-rule lg:pr-4">
+            <span className="pixel-label text-ink-faint">ask</span>
             <p className="mt-1.5 text-[0.625rem] leading-4 text-ink-faint">
               <Kbd className="h-4 bg-muted px-1 text-[0.625rem]">Enter</Kbd>{" "}
               sends
@@ -56,15 +59,21 @@ export function ChatComposer({
             </p>
           </div>
 
-          <div className="lg:pl-5">
+          <div className="min-w-0 lg:pl-5">
             <div
               className={cn(
-                "flex items-end gap-2 rounded-md border border-rule bg-card px-2 py-1.5 transition-colors",
-                "focus-within:border-live/60 focus-within:ring-2 focus-within:ring-live/20"
+                "flex items-end gap-2 border-2 border-rule-strong bg-card px-2 py-1.5 transition-colors",
+                "focus-within:border-live focus-within:shadow-pixel-sm"
               )}
             >
+              <span
+                aria-hidden
+                className="data-mono mb-1.5 shrink-0 pl-1 text-[0.8125rem] text-live"
+              >
+                &gt;
+              </span>
               <Textarea
-                ref={ref}
+                ref={textareaRef}
                 value={value}
                 onChange={(event) => onValueChange(event.target.value)}
                 placeholder={
@@ -75,7 +84,7 @@ export function ChatComposer({
                 disabled={disabled}
                 rows={1}
                 aria-label="Ask a question about this repository"
-                className="data-mono max-h-56 min-h-8 flex-1 resize-none border-0 bg-transparent px-1 py-1 text-[0.8125rem] leading-relaxed shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-[0.8125rem]"
+                className="data-mono max-h-56 min-h-8 min-w-0 flex-1 resize-none rounded-none border-0 bg-transparent px-1 py-1 text-[0.8125rem] leading-relaxed shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-[0.8125rem]"
                 onKeyDown={(event) => {
                   if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
@@ -87,7 +96,7 @@ export function ChatComposer({
               {streaming ? (
                 <Button
                   size="sm"
-                  variant="outline"
+                  variant="pixel-danger"
                   onClick={onStop}
                   aria-label="Stop generating"
                   className="mb-0.5 shrink-0"
@@ -98,6 +107,7 @@ export function ChatComposer({
               ) : (
                 <Button
                   size="sm"
+                  variant="pixel"
                   disabled={!canSend}
                   onClick={() => void submit()}
                   aria-label="Send message"

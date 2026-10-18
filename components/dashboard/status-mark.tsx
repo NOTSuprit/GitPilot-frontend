@@ -1,43 +1,42 @@
+import { PixelGlyph } from "@/components/pixel/pixel-glyph";
 import type { IndexStatus } from "@/lib/api";
+import {
+  pixelStateFromIndexStatus,
+  pixelStates,
+  pixelToneClass,
+} from "@/lib/pixel-state";
 import { cn } from "@/lib/utils";
 
 /**
- * Status is a square, never a pill — the whole layout is a rule grid and a
- * pill would be the only round thing on the page.
+ * Index status as a pixel glyph + a text label. The glyph's shape differs per
+ * state (hollow, half-filled, check, cross) so the status never depends on hue
+ * alone. The definitions live in `lib/pixel-state.ts`; this module keeps the
+ * names the rest of the app already imports.
  *
- *   READY     filled `live`      the corpus answers questions
- *   INDEXING  filled `work`      the only warm hue in the system
- *   PENDING   hollow             nothing has been built yet
- *   FAILED    filled `fault`
+ *   READY     check       `live`   the corpus answers questions
+ *   INDEXING  half block  `work`   pulses while work is in flight
+ *   PENDING   hollow      neutral  nothing has been built yet
+ *   FAILED    cross       `fault`
  */
 
 export const indexStatusLabel: Record<IndexStatus, string> = {
-  PENDING: "New",
-  INDEXING: "Indexing",
-  READY: "Ready",
-  FAILED: "Failed",
+  PENDING: pixelStates.pending.label,
+  INDEXING: pixelStates.indexing.label,
+  READY: pixelStates.ready.label,
+  FAILED: pixelStates.failed.label,
 };
 
 export const indexStatusHint: Record<IndexStatus, string> = {
-  PENDING: "Not indexed yet",
-  INDEXING: "Building the vector index",
-  READY: "Indexed and queryable",
+  PENDING: pixelStates.pending.hint,
+  INDEXING: pixelStates.indexing.hint,
+  READY: pixelStates.ready.hint,
   FAILED: "Indexing did not complete",
 };
 
-const glyph: Record<IndexStatus, string> = {
-  READY: "bg-live",
-  INDEXING: "bg-work animate-pulse",
-  PENDING: "border border-rule-strong",
-  FAILED: "bg-fault",
-};
-
-const tone: Record<IndexStatus, string> = {
-  READY: "text-live",
-  INDEXING: "text-work",
-  PENDING: "text-ink-faint",
-  FAILED: "text-fault",
-};
+function configFor(status: IndexStatus) {
+  const cfg = pixelStates[pixelStateFromIndexStatus(status)];
+  return { cfg, tone: pixelToneClass[cfg.tone].text };
+}
 
 export function StatusGlyph({
   status,
@@ -46,14 +45,12 @@ export function StatusGlyph({
   status: IndexStatus;
   className?: string;
 }) {
+  const { cfg, tone } = configFor(status);
   return (
-    <span
-      aria-hidden
-      className={cn(
-        "block size-2 shrink-0 rounded-[1.5px]",
-        glyph[status],
-        className
-      )}
+    <PixelGlyph
+      shape={cfg.shape}
+      busy={cfg.busy}
+      className={cn("size-3.5", tone, className)}
     />
   );
 }
@@ -67,12 +64,13 @@ export function StatusMark({
   className?: string;
   showLabel?: boolean;
 }) {
+  const { cfg, tone } = configFor(status);
   return (
     <span
-      className={cn("inline-flex items-center gap-2", tone[status], className)}
+      className={cn("inline-flex items-center gap-1.5", tone, className)}
       title={indexStatusHint[status]}
     >
-      <StatusGlyph status={status} />
+      <PixelGlyph shape={cfg.shape} busy={cfg.busy} className="size-3.5" />
       {showLabel ? (
         <span className="label-mono text-current">{indexStatusLabel[status]}</span>
       ) : (
@@ -83,5 +81,5 @@ export function StatusMark({
 }
 
 export function statusTone(status: IndexStatus) {
-  return tone[status];
+  return configFor(status).tone;
 }

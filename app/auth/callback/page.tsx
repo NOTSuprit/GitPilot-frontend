@@ -1,10 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { Micro } from "@/components/layout/listing";
-import { Spinner } from "@/components/ui/spinner";
+import {
+  PixelGridBackground,
+  PixelPanel,
+  PixelProgress,
+  PixelTerminalLabel,
+} from "@/components/pixel";
 import { useCurrentUser } from "@/hooks/use-auth";
 
 export default function AuthCallbackPage() {
@@ -22,17 +27,55 @@ export default function AuthCallbackPage() {
     router.replace("/login?error=session");
   }, [user, isLoading, isFetched, isError, router]);
 
+  // By the time GitHub sends the browser here the backend has already
+  // exchanged the code and set the session cookie. All that is left to do is
+  // ask `/api/auth/me` whether that session is real, so that is all this
+  // screen says it is doing.
+  const noSession = isFetched && !isLoading && !user;
+
   return (
-    <div className="flex min-h-svh items-center justify-center px-4">
-      <div className="border-l-2 border-live pl-3">
-        <div className="flex items-center gap-2.5">
-          <Spinner className="size-3.5 text-live" />
-          <Micro className="text-ink-soft">finishing github sign-in</Micro>
-        </div>
-        <p className="mt-1 text-[0.6875rem] leading-4 text-ink-faint">
-          Exchanging the callback code for a session.
+    <main
+      id="main"
+      className="relative isolate flex min-h-svh items-center justify-center px-4"
+    >
+      <PixelGridBackground variant="grid" fade="edges" className="opacity-50" />
+
+      <PixelPanel
+        raised
+        studs
+        role="status"
+        aria-live="polite"
+        className="w-full max-w-md p-6"
+      >
+        <PixelTerminalLabel cursor>auth · github callback</PixelTerminalLabel>
+        <h1 className="pixel-display mt-3 text-2xl text-foreground">
+          Finishing sign-in
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+          {noSession
+            ? "No session was found. Taking you back to sign in…"
+            : "Checking your session with GitPilot…"}
         </p>
-      </div>
-    </div>
+
+        {/* Unknown duration, so an indeterminate bar rather than a percentage. */}
+        <PixelProgress
+          value={null}
+          tone="live"
+          label="Checking your session"
+          className="mt-5"
+        />
+
+        <p className="mt-4 text-[0.6875rem] leading-4 text-ink-faint">
+          If nothing happens,{" "}
+          <Link
+            href="/login"
+            className="rounded-[3px] text-foreground underline underline-offset-4 hover:text-live"
+          >
+            return to sign in
+          </Link>
+          .
+        </p>
+      </PixelPanel>
+    </main>
   );
 }

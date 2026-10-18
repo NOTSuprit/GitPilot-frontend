@@ -232,8 +232,8 @@ function CodeBlock({
   }
 
   return (
-    <div className="my-3 overflow-hidden rounded-md border border-rule bg-muted/60">
-      <div className="flex items-center gap-2 border-b border-rule px-2.5 py-1">
+    <div className="my-3 overflow-hidden border-2 border-rule-strong bg-paper-sunken">
+      <div className="flex items-center gap-2 border-b-2 border-rule px-2.5 py-1">
         <span className="label-mono text-ink-faint">{lang ?? "code"}</span>
         {open && (
           <span className="label-mono text-work" aria-live="off">
@@ -260,7 +260,7 @@ function CodeBlock({
             <span key={index} className="flex">
               <span
                 aria-hidden
-                className="sticky left-0 w-9 shrink-0 border-r border-rule bg-muted/60 pr-2 text-right text-ink-faint select-none"
+                className="sticky left-0 w-9 shrink-0 border-r-2 border-rule bg-paper-sunken pr-2 text-right text-ink-faint select-none"
               >
                 {index + 1}
               </span>
