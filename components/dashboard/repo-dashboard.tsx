@@ -1,8 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FolderGit2, ListFilter, RefreshCw, TriangleAlert } from "lucide-react";
+import { ListFilter, RefreshCw } from "lucide-react";
 
+import {
+  RepoSummary,
+  RepoSummarySkeleton,
+} from "@/components/dashboard/repo-summary";
 import {
   RepoTile,
   RepoTileSkeleton,
@@ -13,51 +17,47 @@ import {
   type StatusFilter,
   type VisibilityFilter,
 } from "@/components/dashboard/repo-toolbar";
-import { Micro } from "@/components/layout/listing";
+import {
+  PixelEmptyState,
+  PixelSectionHeader,
+} from "@/components/pixel";
 import { Button } from "@/components/ui/button";
 import { useRefreshRepos, useRepos } from "@/hooks/use-repos";
 import { cn } from "@/lib/utils";
 
-/** A quiet framed message — the listing's own voice, not a marketing card. */
-function Notice({
-  icon: Icon,
-  title,
-  children,
-  action,
-  tone = "neutral",
+/** An inline fault banner for a failed sync: loud enough to see, not a page. */
+function SyncFailed({
+  message,
+  onRetry,
+  retrying,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  children?: React.ReactNode;
-  action?: React.ReactNode;
-  tone?: "neutral" | "fault";
+  message: string;
+  onRetry: () => void;
+  retrying: boolean;
 }) {
   return (
     <div
-      className={cn(
-        "flex flex-col items-start gap-3 border-l-2 px-4 py-5",
-        tone === "fault"
-          ? "border-fault bg-fault-tint/60"
-          : "border-rule-strong bg-muted/50"
-      )}
+      role="alert"
+      className="flex flex-wrap items-start justify-between gap-3 border-2 border-fault bg-fault-tint px-4 py-3"
     >
-      <div className="flex items-center gap-2">
-        <Icon
-          className={cn(
-            "size-4",
-            tone === "fault" ? "text-fault" : "text-ink-faint"
-          )}
-        />
-        <h2 className="font-mono text-sm font-semibold tracking-tight">
-          {title}
-        </h2>
-      </div>
-      {children && (
-        <p className="max-w-prose text-xs leading-relaxed text-ink-soft">
-          {children}
+      <div className="min-w-0">
+        <p className="pixel-label text-fault">sync failed</p>
+        <p className="data-mono mt-1 text-xs leading-relaxed break-words text-foreground">
+          {message}
         </p>
-      )}
-      {action}
+      </div>
+      <Button
+        variant="pixel-danger"
+        size="sm"
+        onClick={onRetry}
+        disabled={retrying}
+      >
+        <RefreshCw
+          data-icon="inline-start"
+          className={cn(retrying && "animate-spin")}
+        />
+        Retry sync
+      </Button>
     </div>
   );
 }
@@ -87,10 +87,13 @@ export function RepoDashboard() {
   }, [reposQuery.data, search, status, visibility]);
 
   const total = reposQuery.data?.length ?? 0;
-  const readyCount =
-    reposQuery.data?.filter((r) => r.indexStatus === "READY").length ?? 0;
   const filtersActive =
     status !== "ALL" || visibility !== "all" || search.trim() !== "";
+  // Spin and disable only while a sync is actually running. The list also
+  // refetches every couple of seconds while something is indexing; that is a
+  // poll, not a sync, and must not read as one.
+  const syncing = refresh.isPending;
+  const syncDisabled = syncing || reposQuery.isLoading;
 
   function clearFilters() {
     setSearch("");
@@ -99,23 +102,65 @@ export function RepoDashboard() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[92rem] flex-1 flex-col gap-6 p-6 md:p-8">
-      <RepoToolbar
-        search={search}
-        onSearchChange={setSearch}
-        visibility={visibility}
-        onVisibilityChange={setVisibility}
-        status={status}
-        onStatusChange={setStatus}
-        totalCount={total}
-        readyCount={readyCount}
-        matchCount={filtered.length}
-        onSync={() => refresh.mutate()}
-        isSyncing={refresh.isPending || reposQuery.isFetching}
+    <div className="mx-auto flex w-full max-w-[92rem] flex-1 flex-col gap-6 p-4 sm:p-6 md:p-8">
+      <PixelSectionHeader
+        as="h1"
+        label="workspace"
+        title="Repositories"
+        description="Connect a repository, index it into chunks and embeddings, then ask it questions and check the cited sources."
+        actions={
+          <Button
+            variant="pixel-outline"
+            size="sm"
+            onClick={() => refresh.mutate()}
+            disabled={syncDisabled}
+          >
+            <RefreshCw
+              data-icon="inline-start"
+              className={cn(syncing && "animate-spin")}
+            />
+            {syncing ? "Syncing" : "Sync"}
+          </Button>
+        }
       />
 
+      {refresh.isError && (
+        <SyncFailed
+          message={
+            refresh.error instanceof Error
+              ? refresh.error.message
+              : "Could not sync repositories."
+          }
+          onRetry={() => refresh.mutate()}
+          retrying={syncing}
+        />
+      )}
+
+      {reposQuery.isLoading && <RepoSummarySkeleton />}
+
+      {reposQuery.isSuccess && total > 0 && (
+        <RepoSummary
+          repos={reposQuery.data}
+          status={status}
+          onStatusChange={setStatus}
+        />
+      )}
+
+      {reposQuery.isSuccess && total > 0 && (
+        <RepoToolbar
+          search={search}
+          onSearchChange={setSearch}
+          visibility={visibility}
+          onVisibilityChange={setVisibility}
+          status={status}
+          onStatusChange={setStatus}
+          totalCount={total}
+          matchCount={filtered.length}
+        />
+      )}
+
       {reposQuery.isLoading && (
-        <ul className={TILE_GRID}>
+        <ul className={TILE_GRID} aria-label="Loading repositories" aria-busy>
           {Array.from({ length: 6 }).map((_, i) => (
             <RepoTileSkeleton key={i} />
           ))}
@@ -123,66 +168,58 @@ export function RepoDashboard() {
       )}
 
       {reposQuery.isError && (
-        <Notice
-          icon={TriangleAlert}
+        <PixelEmptyState
           tone="fault"
           title="Couldn’t load repositories"
-          action={
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void reposQuery.refetch()}
-            >
-              <RefreshCw data-icon="inline-start" />
-              Try again
-            </Button>
+          description={
+            <span className="data-mono break-words">
+              {(reposQuery.error as Error).message}
+            </span>
           }
         >
-          <span className="data-mono break-words">
-            {(reposQuery.error as Error).message}
-          </span>
-        </Notice>
+          <Button
+            variant="pixel-outline"
+            size="sm"
+            onClick={() => void reposQuery.refetch()}
+          >
+            <RefreshCw data-icon="inline-start" />
+            Try again
+          </Button>
+        </PixelEmptyState>
       )}
 
       {reposQuery.isSuccess && filtered.length === 0 && (
         <>
           {total === 0 ? (
-            <Notice
-              icon={FolderGit2}
+            <PixelEmptyState
               title="No repositories connected yet"
-              action={
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refresh.mutate()}
-                  disabled={refresh.isPending}
-                >
-                  <RefreshCw
-                    data-icon="inline-start"
-                    className={cn(refresh.isPending && "animate-spin")}
-                  />
-                  {refresh.isPending ? "Syncing" : "Sync from GitHub"}
-                </Button>
-              }
+              description="Pull your GitHub repositories in, then index one to make its code queryable. Indexing chunks the eligible source files and embeds them, so answers can cite exact line ranges."
             >
-              Pull your GitHub repositories in, then index one to make its code
-              queryable. Indexing chunks every source file and embeds it, so
-              answers can cite exact line ranges.
-            </Notice>
+              <Button
+                variant="pixel"
+                size="sm"
+                onClick={() => refresh.mutate()}
+                disabled={syncing}
+              >
+                <RefreshCw
+                  data-icon="inline-start"
+                  className={cn(syncing && "animate-spin")}
+                />
+                {syncing ? "Syncing" : "Sync from GitHub"}
+              </Button>
+            </PixelEmptyState>
           ) : (
-            <Notice
-              icon={ListFilter}
+            <PixelEmptyState
               title="No repositories match"
-              action={
-                filtersActive ? (
-                  <Button variant="outline" size="sm" onClick={clearFilters}>
-                    Clear filters
-                  </Button>
-                ) : undefined
-              }
+              description={`${total} connected, none of them matching the current filters.`}
+              media={<ListFilter aria-hidden className="size-10" />}
             >
-              {total} connected, none of them matching the current filters.
-            </Notice>
+              {filtersActive && (
+                <Button variant="pixel-outline" size="sm" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              )}
+            </PixelEmptyState>
           )}
         </>
       )}
@@ -194,11 +231,11 @@ export function RepoDashboard() {
               <RepoTile key={repo.id} repo={repo} />
             ))}
           </ul>
-          <p className="mt-6 border-t border-rule pt-2">
-            <Micro>
+          <p className="mt-6 border-t-2 border-rule pt-2">
+            <span className="pixel-label text-ink-faint">
               end of listing · {filtered.length}
               {filtered.length === 1 ? " repository" : " repositories"}
-            </Micro>
+            </span>
           </p>
         </div>
       )}

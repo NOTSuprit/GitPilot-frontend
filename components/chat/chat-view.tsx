@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ChatComposer } from "@/components/chat/chat-composer";
+import { ChatHeader } from "@/components/chat/chat-header";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { IndexingGate } from "@/components/chat/indexing-gate";
 import { SessionRail } from "@/components/chat/session-rail";
 import { AccountMenu } from "@/components/layout/account-menu";
 import { BrandMark } from "@/components/layout/app-shell";
-import { Micro } from "@/components/layout/listing";
+import { PixelEmptyState } from "@/components/pixel";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,14 +25,14 @@ import { useIndexStatus, useRepository } from "@/hooks/use-repos";
 function ChatChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="sticky top-0 z-20 flex h-11 shrink-0 items-center gap-2 border-b border-rule bg-background/85 px-3 backdrop-blur-sm">
-        <Link href="/dashboard" className="rounded-[3px]">
+      <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 border-b-2 border-rule-strong bg-background px-3">
+        <Link href="/dashboard" className="rounded-[3px]" aria-label="GitPilot — repositories">
           <BrandMark />
         </Link>
-        <span aria-hidden className="label-mono mx-0.5 text-rule-strong">
+        <span aria-hidden className="pixel-label mx-0.5 text-rule-strong">
           /
         </span>
-        <Micro className="text-ink">chat</Micro>
+        <span className="pixel-label text-ink">chat</span>
         <div className="ml-auto flex items-center gap-1.5">
           <ModeToggle />
           <AccountMenu shape="bar" />
@@ -73,6 +73,14 @@ export function ChatView({ repoId }: { repoId: string }) {
   const messagesQuery = useChatMessages(sessionId);
   const { send, stop, streaming, streamText } = useStreamChat(sessionId);
   const [draft, setDraft] = useState("");
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  // Picking an example only fills the composer — nothing is sent — and puts
+  // the cursor there so Enter sends it.
+  const pickExample = useCallback((question: string) => {
+    setDraft(question);
+    composerRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     if (!ready || sessionsQuery.isLoading) return;
@@ -104,14 +112,15 @@ export function ChatView({ repoId }: { repoId: string }) {
     return (
       <ChatChrome>
         <div className="flex flex-1 flex-col md:flex-row">
-          <div className="w-full shrink-0 border-b border-rule p-3 md:w-64 md:border-r md:border-b-0 lg:w-72">
-            <Skeleton className="h-3.5 w-40 rounded-[3px]" />
-            <Skeleton className="mt-2 h-3 w-24 rounded-[3px]" />
+          <div className="w-full shrink-0 border-b-2 border-rule-strong p-3 md:w-64 md:border-r-2 md:border-b-0 lg:w-72">
+            <Skeleton className="h-3.5 w-40 rounded-none" />
+            <Skeleton className="mt-2 h-3 w-24 rounded-none" />
           </div>
           <div className="flex-1 space-y-3 p-5">
-            <Skeleton className="h-3.5 w-2/3 rounded-[3px]" />
-            <Skeleton className="h-3.5 w-full rounded-[3px]" />
-            <Skeleton className="h-3.5 w-1/2 rounded-[3px]" />
+            <Skeleton className="h-6 w-1/3 rounded-none" />
+            <Skeleton className="h-3.5 w-2/3 rounded-none" />
+            <Skeleton className="h-3.5 w-full rounded-none" />
+            <Skeleton className="h-3.5 w-1/2 rounded-none" />
           </div>
         </div>
       </ChatChrome>
@@ -122,26 +131,25 @@ export function ChatView({ repoId }: { repoId: string }) {
     return (
       <ChatChrome>
         <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-10">
-          <div className="border-l-2 border-fault bg-fault-tint/60 px-4 py-5">
-            <div className="flex items-center gap-2">
-              <TriangleAlert className="size-4 text-fault" />
-              <h1 className="font-mono text-sm font-semibold tracking-tight">
-                Repository unavailable
-              </h1>
-            </div>
-            <p className="data-mono mt-2 text-xs leading-relaxed break-words text-ink">
-              {(repoQuery.error as Error)?.message ?? "Repository not found"}
-            </p>
+          <PixelEmptyState
+            as="h1"
+            tone="fault"
+            title="Repository unavailable"
+            description={
+              <span className="data-mono break-words">
+                {(repoQuery.error as Error)?.message ?? "Repository not found"}
+              </span>
+            }
+          >
             <Button
-              variant="outline"
+              variant="pixel-outline"
               size="sm"
               nativeButton={false}
-              className="mt-3"
               render={<Link href="/dashboard" />}
             >
               Back to repositories
             </Button>
-          </div>
+          </PixelEmptyState>
         </div>
       </ChatChrome>
     );
@@ -159,7 +167,7 @@ export function ChatView({ repoId }: { repoId: string }) {
 
   return (
     <ChatChrome>
-      <div className="flex min-h-0 flex-1 flex-col md:h-[calc(100svh-2.75rem)] md:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col md:h-[calc(100svh-3rem)] md:flex-row">
         <SessionRail
           repo={railRepo}
           sessionId={sessionId}
@@ -167,6 +175,7 @@ export function ChatView({ repoId }: { repoId: string }) {
         />
 
         <section className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <ChatHeader repo={railRepo} />
           {!ready ? (
             <IndexingGate repo={repo} status={statusQuery.data} />
           ) : (
@@ -177,7 +186,7 @@ export function ChatView({ repoId }: { repoId: string }) {
                 streamText={streamText}
                 streaming={streaming}
                 isLoading={messagesQuery.isLoading}
-                onPickExample={setDraft}
+                onPickExample={pickExample}
               />
               <ChatComposer
                 value={draft}
@@ -186,6 +195,7 @@ export function ChatView({ repoId }: { repoId: string }) {
                 streaming={streaming}
                 onSend={send}
                 onStop={stop}
+                textareaRef={composerRef}
               />
             </>
           )}

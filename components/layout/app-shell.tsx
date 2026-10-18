@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { GitPilotIcon } from "@/components/icons/gitpilot-icon";
 import { AccountMenu } from "@/components/layout/account-menu";
-import { Micro } from "@/components/layout/listing";
+import { PixelGridBackground, PixelWordmark } from "@/components/pixel";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -27,13 +27,14 @@ import { dashboardNavGroups, isDashboardNavActive } from "@/lib/dashboard-nav";
 import { cn } from "@/lib/utils";
 
 /**
- * The nav rail is the desk; the inset panel is the sheet of paper on it. Active
- * nav items are marked with a 2px `live` bar in their own left gutter — the same
- * gesture the citation gutter uses in chat, so "you are here" and "this line is
- * cited" read as one language.
+ * The nav rail is a ruled strip down the left edge; the content sits on a faint
+ * pixel grid. Active nav items get a raised field and a 3px `live` marker in
+ * their own left gutter — the same gesture the citation gutter uses in chat, so
+ * "you are here" and "this line is cited" read as one language. On mobile the
+ * rail becomes an off-canvas sheet opened from the bar's trigger.
  */
 const NAV_ITEM_CLASS =
-  "relative font-mono text-[0.8125rem] tracking-tight before:absolute before:inset-y-1.5 before:left-0 before:w-[2px] before:rounded-full before:bg-transparent data-active:before:bg-live group-data-[collapsible=icon]:before:hidden";
+  "relative rounded-[2px] font-mono text-[0.8125rem] tracking-tight before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:bg-transparent data-active:bg-sidebar-accent data-active:before:bg-live group-data-[collapsible=icon]:before:hidden";
 
 export function AppShell({
   children,
@@ -49,7 +50,7 @@ export function AppShell({
 
   return (
     <SidebarProvider>
-      <Sidebar variant="inset" collapsible="icon">
+      <Sidebar variant="sidebar" collapsible="icon" className="border-r-2 border-rule-strong">
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -59,11 +60,9 @@ export function AppShell({
                 tooltip="GitPilot"
                 className="gap-2.5"
               >
-                <GitPilotIcon className="size-7 rounded-[6px]" />
+                <GitPilotIcon className="size-7 rounded-[3px]" />
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate font-mono text-sm font-semibold tracking-tight">
-                    GitPilot
-                  </span>
+                  <PixelWordmark className="truncate text-lg" />
                   <span className="label-mono truncate text-ink-faint">
                     repo → index → answer
                   </span>
@@ -76,7 +75,7 @@ export function AppShell({
         <SidebarContent>
           {dashboardNavGroups.map((group) => (
             <SidebarGroup key={group.label}>
-              <SidebarGroupLabel className="label-mono text-ink-faint">
+              <SidebarGroupLabel className="pixel-label text-ink-faint">
                 {group.label}
               </SidebarGroupLabel>
               <SidebarGroupContent>
@@ -115,7 +114,14 @@ export function AppShell({
 
       <SidebarInset className="min-w-0">
         <AppBar crumb={crumb} actions={actions} />
-        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+        <div className="relative isolate flex min-w-0 flex-1 flex-col">
+          <PixelGridBackground
+            variant="grid"
+            fade="bottom"
+            className="opacity-40"
+          />
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
@@ -133,9 +139,9 @@ function AppBar({
   actions?: React.ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-20 flex h-11 shrink-0 items-center gap-1.5 border-b border-rule bg-background/85 px-2.5 backdrop-blur-sm md:rounded-t-xl">
+    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-1.5 border-b-2 border-rule-strong bg-background px-2.5">
       <SidebarTrigger className="text-ink-soft" />
-      <Separator orientation="vertical" className="mx-0.5 !h-4 bg-rule" />
+      <Separator orientation="vertical" className="mx-0.5 !h-4 bg-rule-strong" />
       <Crumb crumb={crumb} />
       <div className="ml-auto flex items-center gap-1.5">
         {actions}
@@ -148,13 +154,13 @@ function AppBar({
 function Crumb({ crumb }: { crumb?: string }) {
   return (
     <p className="min-w-0 truncate">
-      <Micro className="text-ink-faint">gitpilot</Micro>
+      <span className="pixel-label text-ink-faint">gitpilot</span>
       {crumb && (
         <>
-          <span aria-hidden className="label-mono mx-1.5 text-rule-strong">
+          <span aria-hidden className="pixel-label mx-1.5 text-rule-strong">
             /
           </span>
-          <Micro className="text-ink">{crumb}</Micro>
+          <span className="pixel-label text-ink">{crumb}</span>
         </>
       )}
     </p>
@@ -171,11 +177,9 @@ export function BrandMark({
 }) {
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
-      <GitPilotIcon className="size-7 rounded-[6px]" />
+      <GitPilotIcon className="size-7 rounded-[3px]" />
       <span className="grid leading-tight">
-        <span className="font-mono text-sm font-semibold tracking-tight">
-          GitPilot
-        </span>
+        <PixelWordmark className="text-lg" />
         {showTagline && (
           <span className="label-mono text-ink-faint">
             repo → index → answer

@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 
 function initials(name: string | undefined) {
   const source = (name ?? "").trim();
-  if (!source) return "DP";
+  if (!source) return "GP";
   const parts = source.split(/\s+/);
   if (parts.length === 1) return source.slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
@@ -44,9 +44,9 @@ export function AccountMenu({
   const handle = user?.githubUsername;
 
   const avatar = (
-    <Avatar className="size-6 rounded-[4px] border border-rule">
+    <Avatar className="size-6 rounded-[2px] border-2 border-rule-strong">
       <AvatarImage src={user?.avatarUrl ?? undefined} alt="" />
-      <AvatarFallback className="label-mono rounded-[4px] bg-muted text-ink-soft">
+      <AvatarFallback className="label-mono rounded-[2px] bg-muted text-ink-soft">
         {initials(user?.displayName)}
       </AvatarFallback>
     </Avatar>

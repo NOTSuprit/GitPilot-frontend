@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Micro } from "@/components/layout/listing";
 import { cn } from "@/lib/utils";
 
 /**
@@ -50,12 +49,12 @@ export function IndexError({
   return (
     <div
       className={cn(
-        "border-l-2 border-fault bg-fault-tint/60 py-2.5 pr-3 pl-3",
+        "border-2 border-fault bg-fault-tint px-3 py-2.5",
         className
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <Micro className="text-fault">indexing failed</Micro>
+        <span className="pixel-label text-fault">indexing failed</span>
         <div className="flex shrink-0 items-center gap-1">
           {text && (
             <Button

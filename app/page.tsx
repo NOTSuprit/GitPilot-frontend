@@ -1,25 +1,16 @@
-import { Capabilities } from "@/components/landing/capabilities";
 import { FinalCta } from "@/components/landing/final-cta";
 import { GithubCta } from "@/components/landing/github-cta";
-import { HeroFigure } from "@/components/landing/hero-figure";
-import { HowItWorks } from "@/components/landing/how-it-works";
+import { HeroWorkbench } from "@/components/landing/hero-workbench";
 import { LandingNav } from "@/components/landing/landing-nav";
-import { PipelineLedger } from "@/components/landing/pipeline-ledger";
-import { Micro } from "@/components/layout/listing";
+import { PipelineSteps } from "@/components/landing/pipeline-steps";
+import { TrustPanel } from "@/components/landing/trust-panel";
+import { PixelGridBackground, PixelTerminalLabel } from "@/components/pixel";
 
 /**
- * The public landing page.
- *
- * This is a Server Component and stays one. The only client JavaScript the page
- * ships is the theme toggle and the hero figure — and the figure's Three.js is
- * behind `next/dynamic({ ssr: false })`, so the headline, the copy and the
- * GitHub CTA are all server-rendered HTML that work before any script arrives.
- * The CTA in particular is a plain `<a>`: sign-in does not depend on hydration.
- *
- * Structure follows the app's own "listing" grammar — an 11rem monospace gutter
- * naming each section, a hairline separating it from the measure, and rules
- * instead of cards for every division. It should read as the same product as
- * the dashboard, shot on a longer lens.
+ * The public landing page. A Server Component: the headline, copy, trust note
+ * and CTA are all server-rendered HTML, and the illustration is script-free
+ * SVG with a CSS-only loop. The CTA is a plain `<a>`, so sign-in does not
+ * depend on hydration.
  */
 export default function HomePage() {
   return (
@@ -27,66 +18,61 @@ export default function HomePage() {
       <LandingNav />
 
       <main id="main" className="flex-1">
-        {/* ---------------------------------------------------------- hero --- */}
         <section
           aria-labelledby="hero-heading"
-          className="mx-auto w-full max-w-[78rem] px-4 pt-10 pb-14 md:pt-16 md:pb-20"
+          className="relative isolate overflow-hidden"
         >
-          <div className="lg:grid lg:grid-cols-[11rem_minmax(0,1fr)]">
-            <div className="lg:border-r lg:border-rule lg:pr-4">
-              <Micro>grounded code assistant</Micro>
-            </div>
+          <PixelGridBackground variant="grid" fade="bottom" className="opacity-50" />
 
-            <div className="mt-4 lg:mt-0 lg:pl-6">
-              <h1
-                id="hero-heading"
-                className="max-w-3xl font-mono text-[1.75rem] leading-[1.12] font-semibold tracking-tight text-balance sm:text-4xl lg:text-[2.75rem]"
-              >
-                Ask your codebase a question.
-                <br className="hidden sm:block" />{" "}
-                <span className="text-ink-soft">
-                  Get the lines that answer it.
-                </span>
-              </h1>
+          <div className="mx-auto w-full max-w-[78rem] px-4 pt-12 pb-14 md:pt-20 md:pb-20">
+            <PixelTerminalLabel>repo → index → answer</PixelTerminalLabel>
 
-              <p className="mt-5 max-w-[46rem] text-sm leading-relaxed text-ink-soft sm:text-base">
-                GitPilot indexes a GitHub repository into a vector store, then
-                answers from the chunks it retrieves — never from memory of the
-                internet. Every response arrives with the file paths and line
-                ranges it was built from, each one a link into your default
-                branch.
+            <h1
+              id="hero-heading"
+              className="pixel-display mt-4 max-w-4xl text-[2.5rem] text-balance text-foreground sm:text-6xl lg:text-7xl"
+            >
+              Your codebase.{" "}
+              <span className="text-vector">Mapped.</span>{" "}
+              <span className="text-live">Searchable.</span>
+            </h1>
+
+            <p className="mt-6 max-w-2xl text-base leading-relaxed text-ink-soft sm:text-lg">
+              GitPilot indexes a GitHub repository you connect, then answers
+              your questions from the source-code chunks it retrieves — each
+              answer cited to the files and line ranges it came from.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <GithubCta />
+              <p className="max-w-md text-xs leading-relaxed text-ink-soft">
+                Uses GitHub’s <span className="data-mono">repo</span> scope,
+                which GitHub doesn’t offer read-only. GitPilot only makes read
+                requests.{" "}
+                <a
+                  href="#trust"
+                  className="rounded-[3px] text-foreground underline underline-offset-4 hover:text-live"
+                >
+                  Exactly what that means
+                </a>
               </p>
-
-              <div className="mt-7 flex flex-wrap items-center gap-x-4 gap-y-3">
-                <GithubCta />
-                <span className="label-mono text-ink-soft">
-                  read-only access · no writes to your repositories
-                </span>
-              </div>
             </div>
-          </div>
 
-          {/* The figure gets the full measure — it is the argument, not a
-              garnish beside the copy. */}
-          <div className="mt-10 md:mt-14">
-            <HeroFigure />
+            <HeroWorkbench className="mt-12 md:mt-16" />
           </div>
         </section>
 
         <div className="mx-auto w-full max-w-[78rem] px-4">
-          <HowItWorks />
-          <PipelineLedger />
-          <Capabilities />
+          <PipelineSteps />
+          <TrustPanel />
           <FinalCta />
         </div>
       </main>
 
-      <footer className="border-t border-rule">
+      <footer className="border-t-2 border-rule-strong">
         <div className="mx-auto flex w-full max-w-[78rem] flex-wrap items-center justify-between gap-3 px-4 py-5">
-          <Micro>gitpilot · repo → index → answer</Micro>
-          <Micro className="text-rule-strong">
-            end of page
-          </Micro>
+          <span className="pixel-label text-ink-faint">
+            gitpilot · repo → index → answer
+          </span>
         </div>
       </footer>
     </div>
